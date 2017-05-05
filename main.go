@@ -21,7 +21,7 @@ import (
 
 var (
 	// can be filled in by linker directive
-	// Windows: go build -ldflags "-X main.builddate=%date%.%time%" dysonbeat
+	// Windows: go build -ldflags "-X main.builddate=%date%.%time%"
 	//
 	builddate string
 
@@ -69,6 +69,7 @@ func createHostID() {
 		fmt.Println(err)
 	}
 
+	// stash the correlation uid to send with every event
 	beater.CorrelationID, err = createUUID()
 	if err != nil {
 		beater.CorrelationID = "cid-error"

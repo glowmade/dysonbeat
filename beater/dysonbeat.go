@@ -111,9 +111,11 @@ func (bt *Dysonbeat) Run(b *beat.Beat) error {
 			continue
 		}
 
+		// place our flatbuffer over the buffer to begin reading out
 		var fLog dyson.FlatLog
 		fLog.Init(buf, flatbuffers.GetUOffsetT(buf))
 
+		// convert the unix ts from the log buffer into something ES likes
 		timeFromLog := common.Time(time.Unix(int64(fLog.Ts()), 0))
 
 		event := common.MapStr{
@@ -122,13 +124,17 @@ func (bt *Dysonbeat) Run(b *beat.Beat) error {
 			"uid":        fLog.Uid(),
 			"message":    string(fLog.Message()),
 			"context":    string(fLog.Context()),
-            "stack":      string(fLog.Stack()),
+			"stack":      string(fLog.Stack()),
 			"tags":       CorrelationID,
 			"level":      fLog.Level(),
 		}
 
-        // potentialy unpack the string, string, string, string .. linear array from the flatbuffer
-        // into [string:string], [string:string] field map
+		// HDD might be interesting to nominate a specific Level() to consider as worthy of passing onto the
+		// 		local slack log hookup, eg. a service has a serious panic with level=666 and we can relay the message both to ES
+		//		as well as our ops channel
+
+		// potentialy unpack the string, string, string, string .. linear array from the flatbuffer
+		// into [string:string], [string:string] field map
 		numFields := fLog.FieldsLength()
 		numFieldPairs := numFields / 2
 		if numFieldPairs > 0 {
