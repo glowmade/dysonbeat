@@ -19,7 +19,7 @@ import (
 // set by main(), encoded as tag to match up with logged ID in Slack
 var CorrelationID string
 
-type Glowbeat struct {
+type Dysonbeat struct {
 	done   chan struct{}
 	config config.Config
 	client publisher.Client
@@ -32,7 +32,7 @@ func New(b *beat.Beat, cfg *common.Config) (beat.Beater, error) {
 		return nil, fmt.Errorf("Error reading config file: %v", err)
 	}
 
-	bt := &Glowbeat{
+	bt := &Dysonbeat{
 		done:   make(chan struct{}),
 		config: config,
 	}
@@ -44,7 +44,7 @@ const (
 	cRecvReadBuffer    = cUDPReadBufferSize * 1024
 )
 
-func (bt *Glowbeat) Run(b *beat.Beat) error {
+func (bt *Dysonbeat) Run(b *beat.Beat) error {
 
 	bt.client = b.Publisher.Connect()
 
@@ -83,7 +83,7 @@ func (bt *Glowbeat) Run(b *beat.Beat) error {
 		default:
 		}
 
-		// HDD think about goroutines to avoid read loss
+		// HDD think about goroutines to avoid any read stall / loss?
 		count, _, err := bt.udpcon.ReadFrom(buf)
 		if err != nil {
 			e, ok := err.(net.Error)
@@ -107,7 +107,7 @@ func (bt *Glowbeat) Run(b *beat.Beat) error {
 		}
 
 		if dyson.FlatLogTypeFourCC != gotIdentifier {
-			log.Errorf("flatbeat - incorrect type id %s, expected %s", gotIdentifier, dyson.FlatLogTypeFourCC)
+			log.Errorf("incorrect type id %s, expected %s", gotIdentifier, dyson.FlatLogTypeFourCC)
 			continue
 		}
 
@@ -122,10 +122,13 @@ func (bt *Glowbeat) Run(b *beat.Beat) error {
 			"uid":        fLog.Uid(),
 			"message":    string(fLog.Message()),
 			"context":    string(fLog.Context()),
+            "stack":      string(fLog.Stack()),
 			"tags":       CorrelationID,
 			"level":      fLog.Level(),
 		}
 
+        // potentialy unpack the string, string, string, string .. linear array from the flatbuffer
+        // into [string:string], [string:string] field map
 		numFields := fLog.FieldsLength()
 		numFieldPairs := numFields / 2
 		if numFieldPairs > 0 {
@@ -141,7 +144,7 @@ func (bt *Glowbeat) Run(b *beat.Beat) error {
 	}
 }
 
-func (bt *Glowbeat) Stop() {
+func (bt *Dysonbeat) Stop() {
 	log.Info("_", CorrelationID, "_ is *stopping* ...")
 	bt.client.Close()
 	close(bt.done)
