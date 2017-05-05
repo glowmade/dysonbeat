@@ -1,0 +1,25 @@
+- key: dysonbeat
+  title: dysonbeat
+  description:
+  fields:
+    - name: uid
+      type: long
+      description: >
+        arbitrary uid
+    - name: message
+      type: text
+      description: >
+        the log message
+    - name: context
+      type: text
+      description: >
+        log context, eg 'auth', 'search'
+    - name: stack
+      type: text
+      description: >
+        a small snippet of optional stack frame
+    - name: level
+      type: byte
+      required: true
+      description: >
+        log level

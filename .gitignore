@@ -1,0 +1,11 @@
+/.idea
+/build
+
+.DS_Store
+/dysonbeat
+/dysonbeat.test
+/logs
+/data
+.vscode
+dysonbeat.yml
+*.pyc
